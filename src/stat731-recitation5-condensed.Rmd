@@ -1,0 +1,391 @@
+---
+title: "STAT-731 Recitation 5"
+author: "K. Tyler Wilcox"
+date: "November 21, 2016"
+output:
+  beamer_presentation:
+    highlight: zenburn
+    incremental: false
+    theme: "metropolis"
+---
+
+Overview
+========================================================
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+- Bias
+- Variance
+- Mean Squared Error
+- Likelihood
+- Maximum Likelihood Estimator
+- Method of Moments Estimator
+- Relative Efficiency
+
+Bias of an Estimator
+========================================================
+
+- Let $\theta$ be a parameter governing the distribution of a random variable $X$
+$$X \sim F_X(x; \theta)$$
+- Many estimates of $\theta$ can be proposed \ldots
+- One way to choose among estimators is by considering their bias
+$$\text{Bias}\left[\hat{\theta}\right] = \mathbb{E}\left[\hat{\theta}\right] - \theta$$
+- The estimator $\hat{\theta}$ is unbiased if $\text{Bias}\left[\hat{\theta}\right] = 0$
+
+Variance of an Estimator
+========================================================
+
+- We can also consider the variability of the estimator $\hat{\theta}$
+$$\mathbb{V}\left[\hat{\theta}\right] = \mathbb{E}\left[\left(\hat{\theta} - \mathbb{E}\left[\hat{\theta}\right]\right) ^ 2\right]$$
+- Sensibly, lower variance of an estimator is preferred
+
+Mean Squared Error
+========================================================
+
+- Many estimators are all unbiased
+- Are they all equally good?
+- Many estimators have low variance, but are biased
+- Are they good?
+- Consider the mean squared error (MSE)
+$$\text{MSE}\left[\hat{\theta}\right] = \mathbb{E}\left[\left(\hat{\theta} - \theta \right) ^ 2\right]$$
+- Decomposing the MSE into squared bias and variance
+\begin{align*}
+  \text{MSE}\left[\hat{\theta}\right] &= \mathbb{E}\left[\left(\hat{\theta} - \theta \right) ^ 2\right] \\
+                                      &= \left(\mathbb{E}\left[\hat{\theta}\right] - \theta\right) ^ 2 + \mathbb{E}\left[\left(\hat{\theta} - \mathbb{E}\left[\hat{\theta}\right]\right) ^ 2\right] \\
+                                      &= \text{Bias}\left[\hat{\theta}\right] ^ 2 + \mathbb{V}\left[\hat{\theta}\right]
+  \end{align*}
+
+Activity 1: Estimation for a Beta Distribution
+========================================================
+
+- Let $X_i \overset{\text{iid}}{\sim} \text{Beta}\left(a, 1\right), i = 1, \ldots, n$
+\begin{align*}
+  f_X(x) &= \frac{\Gamma\left(a + 1\right)}{\Gamma\left(a\right)\Gamma\left(1\right)} x^{a - 1}\left(1 - x\right) ^ {1 - 1} \\
+         &= ax^{a - 1}
+\end{align*}
+- Note $a > 0$ and $x \in (0, 1)$
+
+Activity 1: Exercise 1 - Expected Value of $X_i$
+========================================================
+
+- Find the expected value of $X_i$
+- First approach:
+    - $X \sim \text{Beta}\left(a, b\right)$, so $\mathbb{E}\left[X\right] = \frac{a}{a + b}$
+    - Therefore,
+    $$\mathbb{E}\left[X_i\right] = \frac{a}{a + 1}$$
+- Second approach: integrating
+$$\int_{x_i \in \mathcal{X}} x_i f_X(x_i) dx_i$$
+
+Activity 1: Exercise 2 - Variance of $X_i$
+========================================================
+
+- Find the variance of $X_i$
+- First approach:
+    - $X \sim \text{Beta}\left(a, b\right)$, so $\mathbb{V}\left[X\right] = \frac{ab}{(a + b) ^ 2 (a + b + 1)}$
+    - Therefore,
+    $$\mathbb{V}\left[X_i\right] = \frac{a}{(a + 1) ^ 2 (a + 2)}$$
+- Second approach:
+    - Integrate
+$$\int_{x_i \in \mathcal{X}} x_i^2 f_{X}(x_i) dx_i$$
+    - Take advantage of $\mathbb{V}\left[X_i\right] = \mathbb{E}\left[X_i ^ 2\right] - \left(\mathbb{E}\left[X_i\right]\right) ^ 2$
+
+Activity 1: Exercise 3 - Likelihood Function of $a$
+========================================================
+
+- Recall the likelihood of a parameter $a$ is a joint distribution
+$$L(a) = f_X(x_1, \ldots, x_n; a)$$
+- Note: $X_i, 1, \ldots, n$ are i.i.d.
+$$L(a) = \prod_{i = 1}^{n} f_X(x_i; a)$$
+- Turning to our knowledge that $X_i \overset{\text{iid}}{\sim} \text{Beta}\left(a, 1\right), i = 1, \ldots, n$
+\begin{align*}
+  L(a) &= \prod_{i = 1}^{n} f_X(x_i; a) \\
+            &= \prod_{i = 1}^{n} ax_i^{a - 1} \\
+            &= a^n \prod_{i = 1}^{n} x_i^{a - 1} \\
+            &= a^n \left(\prod_{i = 1}^{n} x_i\right) ^ {a - 1}
+\end{align*}
+
+Activity 1: Exercise 4 - Log-Likelihood Function of $a$
+========================================================
+
+- Now that we have the likelihood function (i.e., a pdf), we could attempt to obtain a maximum likelihood estimator of $a$
+- Notice, however, that there will be no clean way to take the derivative $\frac{\delta L(a)}{\delta a}$
+- Instead, taking the natural logarithm of $L(a$) yields a more tractable function to maximize: $\ell(a) = \log\left(L(a)\right)$
+\begin{align*}
+  \ell(a) &= \log\left(a^n \left(\prod_{i = 1}^{n} x_i\right) ^ {a - 1}\right) \\
+          &= n \log(a) + (a -1) \sum_{i = 1} ^ {n} \log(x_i)
+\end{align*}
+
+Activity 1: Exercise 5 - Generate Sample $X_i, 1, \ldots, n$
+========================================================
+
+- Let $n = 100$, $a = 3$
+
+```{r}
+set.seed(333L)
+n = 100L
+a = 3.0
+x = rbeta(n, shape1 = a, shape2 = 1.0)
+```
+
+Activity 1: Exercise 6 - Theoretical and Empirical Distributions
+========================================================
+
+```{r, fig.height = 4.5}
+par(mfrow = c(1L, 2L))
+curve(expr = dbeta(x, shape1 = a, shape2 = 1.0),
+      from = 0.0, to = 1.0)
+hist(x, probability = TRUE)
+lines(density(x), col = "red", lwd = 2)
+```
+
+Activity 1: Exercise 7 - Plotting $L(a)$ and $\ell(a)$
+========================================================
+
+```{r}
+likelihood = function(x) {
+  n = 100L
+  y = rbeta(n, shape1 = 3.0, shape2 = 1.0)
+  like = x ^ n * prod(y) ^ (x - 1)
+  return(like)
+}
+```
+
+***
+
+```{r, eval = FALSE}
+par(mfrow = c(1L, 2L))
+curve(expr = likelihood(x), from = 0.0, to = 10.0,
+      xlab = expression(a), ylab = expression(L(a)))
+abline(v = 3)
+curve(log(likelihood(x)), from = 0.0, to = 10.0,
+      xlab = expression(a),
+      ylab = expression(log(L(a))))
+abline(v = 3)
+```
+
+***
+
+```{r, fig.height = 7, echo = FALSE}
+par(mfrow = c(1L, 2L))
+curve(expr = likelihood(x), from = 0.0, to = 10.0,
+      xlab = expression(a), ylab = expression(L(a)))
+abline(v = 3)
+curve(log(likelihood(x)), from = 0.0, to = 10.0,
+      xlab = expression(a),
+      ylab = expression(log(L(a))))
+abline(v = 3)
+```
+
+Activity 1: Exercise 8 - Maximum Likelihood Estimator of $a$
+========================================================
+
+- The maximum likelihood estimate of $a$ (MLE) is obtained by maximizing $\ell(a)$
+- $\ell(a) = n \log(a) + (a -1) \sum_{i = 1} ^ {n} \log(x_i)$
+- $\ell'(a) = \frac{a}{n} + \sum_{i = 1} ^ {n} \log(x_i)$
+- Setting $\ell'(a) = 0$ and solving for $a$
+$$\hat{a}_{MLE} = -\frac{n}{\sum_{i = 1} ^ {n} \log(x_i)}$$
+
+Activity 1: Exercise 9 - Method of Moments Estimator of $a$
+========================================================
+
+- We know $\mathbb{E}\left[X\right] = \frac{a}{a + 1}$
+- Set the population moment equal to the sample moment
+$$\mathbb{E}\left[X\right] = \bar{X}$$
+- Solve for $a$
+\begin{align*}
+  \frac{a}{a + 1} &= \bar{X} \\
+  a &= \bar{X} (a + 1) \\
+  a &= a\bar{X} + \bar{X} \\
+  a - a\bar{X} &= \bar{X} \\
+  a(1 - \bar{X}) &= \bar{X} \\
+  \hat{a}_{MME} &= \frac{\bar{X}}{1 - \bar{X}}
+\end{align*}
+
+Activity 1: Exercise 10 - Properties of $\hat{a}_{MLE}$ and $\hat{a}_{MME}$
+========================================================
+
+- We can use empirical simulation to explore the statistical properties of estimators
+
+```{r}
+mle_beta = function(x) {
+  n = length(x)
+  mle = -n / sum(log(x))
+  return(mle)
+}
+mme_beta = function(x) {
+  mme = mean(x) / (1.0 - mean(x))
+  return(mme)
+}
+```
+
+***
+
+```{r}
+M = 100L # Number of replications of sample size n
+L = 50L  # Number of sample sizes to explore
+mle = mme = numeric(M) # Store M estimates of MLE/MME
+vn = numeric(L) # Store sample sizes
+bias = variance = pct = matrix(0, nrow = L, ncol = 2L)
+tol = 0.05
+```
+
+***
+
+```{r}
+for (l in 1L:L) {
+  n = 10L + 2L * (l - 1L) * 200L
+  # Store M different samples, one sample per column
+  mat_y = matrix(
+    rbeta(n * M, shape1 = a, shape2 = 1.0),
+    ncol = M, nrow = n)
+  mle = apply(mat_y, 2L, mle_beta) # Compute MLE
+  mme = apply(mat_y, 2L, mme_beta) # Compute MME
+  # Compute bias and variance
+  bias[l, 1] = mean(mle) - a
+  bias[l, 2] = mean(mme) - a
+  variance[l, 1] = var(mle)
+  variance[l, 2] = var(mme)
+  pct[l, 1] = length(which(abs(mle - a) < tol)) / M
+  pct[l, 2] = length(which(abs(mme - a) < tol)) / M  
+  vn[l]     = n
+}
+```
+
+Bias
+=============================
+
+```{r, eval = FALSE}
+matplot(vn, bias, type = 'l', lty = 1L:2L,
+        xlab = 'Sample Size n', ylab = 'Bias',
+        ylim = c(-0.125, 0.125), col = 1L,
+        main = 'Bias of Estimators')
+abline(h = 1L, lwd = 1L, lty = 4L)
+legend('bottomright', lty = 1L:2L,
+       c('MLE','MME'))
+```
+
+***
+
+```{r, fig.height = 7, echo = FALSE}
+matplot(vn, bias, type = 'l', lty = 1L:2L,
+        xlab = 'Sample Size n', ylab = 'Bias',
+        ylim = c(-0.125, 0.125), col = 1L,
+        main = 'Bias of Estimators')
+abline(h = 1L, lwd = 1L, lty = 4L)
+legend('bottomright', lty = 1L:2L,
+       c('MLE','MME'))
+```
+
+Variance
+============================
+
+```{r, eval = FALSE}
+matplot(vn, variance, type = 'l', lty = 1L:2L,
+        xlab = 'Sample Size n', ylab = 'Variance',
+        ylim = c(0.0, 1.5), col = 1L,
+        main = 'Variance of Estimators')
+legend('topright', lty = 1L:2L,
+       c('MLE','MME'))
+```
+
+***
+
+```{r, fig.height = 7, echo = FALSE}
+matplot(vn, variance, type = 'l', lty = 1L:2L,
+        xlab = 'Sample Size n', ylab = 'Variance',
+        ylim = c(0.0, 1.5), col = 1L,
+        main = 'Variance of Estimators')
+legend('topright', lty = 1L:2L,
+       c('MLE','MME'))
+```
+
+Mean Squared Error
+========================
+
+```{r, eval = FALSE}
+matplot(vn, bias ^ 2 + variance, type = 'l',
+        lty = 1L:2L, xlab = 'Sample Size n',
+        ylab = 'Bias', ylim = c(0.0, 1.5),
+        col = 1L, main = 'Mean Squared Error')
+legend('topright', lty = 1L:2L,
+       c('MLE','MME'))
+```
+
+***
+
+```{r, fig.height = 7, echo = FALSE}
+matplot(vn, bias ^ 2 + variance, type = 'l',
+        lty = 1L:2L, xlab = 'Sample Size n',
+        ylab = 'Bias', ylim = c(0.0, 1.5),
+        col = 1L, main = 'Mean Squared Error')
+legend('topright', lty = 1L:2L,
+       c('MLE','MME'))
+```
+
+Relative Efficiency
+========================
+
+```{r, eval = FALSE}
+mse_mle = bias[, 1] ^ 2 + variance[, 1]
+mse_mme = bias[, 2] ^ 2 + variance[, 2]
+rel_eff = mse_mle / mse_mme
+plot(vn, rel_eff, type = 'l', xlab = 'Sample Size n',
+     ylab = 'MSE(MLE) / MSE(MME)', ylim = c(0.5, 1.5),
+     main = 'Relative Efficiency of Estimators')
+abline(h = 1L, lwd = 1L, lty = 4L)
+legend('bottomright', lty = 1L:2L,
+       c('MLE','MME'))
+```
+
+***
+
+```{r, fig.height = 7, echo = FALSE}
+mse_mle = bias[, 1] ^ 2 + variance[, 1]
+mse_mme = bias[, 2] ^ 2 + variance[, 2]
+rel_eff = mse_mle / mse_mme
+plot(vn, rel_eff, type = 'l', xlab = 'Sample Size n',
+     ylab = 'MSE(MLE) / MSE(MME)', ylim = c(0.5, 1.5),
+     main = 'Relative Efficiency of Estimators')
+abline(h = 1L, lwd = 1L, lty = 4L)
+legend('bottomright', lty = 1L:2L,
+       c('MLE','MME'))
+```
+
+Sufficiency
+=============================
+
+```{r, eval = FALSE}
+matplot(vn, pct, type = 'l',
+        lty = 1L:2L, xlab = 'Sample Size n',
+        ylab = 'Pr[|a_hat - a| < tolerance]',
+        ylim = c(0.0, 1.0), col = 1L,
+        main = 'Consistency')
+legend('bottomright', lty = 1L:2L,
+       c('MLE','MME'))
+```
+
+***
+
+```{r, fig.height = 7, echo = FALSE}
+matplot(vn, pct, type = 'l',
+        lty = 1L:2L, xlab = 'Sample Size n',
+        ylab = 'Pr[|a_hat - a| < tolerance]',
+        ylim = c(0.0, 1.0), col = 1L,
+        main = 'Consistency')
+legend('bottomright', lty = 1L:2L,
+       c('MLE','MME'))
+```
+
+Wrapping Up
+========================================================
+
+- Bias
+- Variance
+- Mean Squared Error
+- Likelihood
+- Maximum Likelihood Estimator
+- Method of Moments Estimator
+- Relative Efficiency
+- Questions?
